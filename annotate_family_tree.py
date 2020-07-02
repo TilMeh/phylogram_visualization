@@ -3,7 +3,8 @@
 #####################
 from collections import Counter
 import pandas as pd
-import sys
+from pathlib import Path
+import os.path, time
 import subprocess
 import xml.etree.ElementTree as ET
 import argparse
@@ -19,7 +20,7 @@ __copyright__ = 'Copyright (C) 2020 Michael Gruenstaeudl and Tilman Mehl'
 __info__ = 'Prune angiosperm phylogenetic tree to family level and annotate ' \
 		   'leaves with counts of avaible plastid genome entries in ' \
            'NCBI GenBank.'
-__version__ = '2020.07.02.1600'
+__version__ = '2020.07.02.1700'
 
 
 #############
@@ -82,7 +83,7 @@ def get_species_in_family(species_set, ncbi_db):
     species_in_family = {}
     species_taxids = ncbi_db.get_name_translator(species_set)
     for species, taxid in species_taxids.items():
-        f_name = get_family_from_lineage(ncbi.get_taxid_translator(ncbi.get_lineage(taxid[0])))
+        f_name = get_family_from_lineage(ncbi_db.get_taxid_translator(ncbi_db.get_lineage(taxid[0])))
         if f_name:
             if f_name in species_in_family:
                 species_in_family[f_name].add(species)
@@ -163,11 +164,12 @@ def main(args):
 
     # STEP 1: Set up logger
     log = logging.getLogger(__name__)
-	coloredlogs.install(fmt='%(asctime)s [%(levelname)s] %(message)s', level='DEBUG', logger=log)
+    coloredlogs.install(fmt='%(asctime)s [%(levelname)s] %(message)s', level='DEBUG', logger=log)
 
     # STEP 2: Retrieve and/or update localized NCBI Taxonomy database
     ncbi = NCBITaxa()
-    ncbi.update_taxonomy_database()
+    if (time.time() - os.path.getmtime(os.path.join(Path.home(), ".etetoolkit/taxa.sqlite"))) > 86400:
+        ncbi.update_taxonomy_database()
 
     # STEP 3: Prune species-level tree to family-level
 
@@ -176,7 +178,7 @@ def main(args):
     t = Tree(args.infn, format=5)
         # STEP 3.2: Add species names to species_set_from_tree set
     log.debug("Gathering species(leaf) names...")
-    species_set_from_tree = Set()
+    species_set_from_tree = set()
     for leaf in t.iter_leaves():
         species_set_from_tree.add(leaf.name.replace("_"," "))
         # STEP 3.3: Assign species to families
@@ -200,7 +202,9 @@ def main(args):
     # STEP 5: Set TreeStyle and render tree
     ts = TreeStyle()
     ts.mode = "c"
-    print("Rendering Tree...")
+    ts.draw_guiding_lines = True
+    ts.show_leaf_name = False
+    log.debug("Rendering Tree...")
     t.render(args.outfn, w=10000, h=10000, tree_style=ts)
 
 if __name__ == "__main__":
@@ -209,4 +213,4 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outfn", type=str, required=True, help="path to .png output file")
     parser.add_argument("-t", "--tablefn", type=str, required=True, help="path to .csv file containing information on plastid genomes available in NCBI GenBank")
     args = parser.parse_args()
-	main(args)
+    main(args)
