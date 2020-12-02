@@ -168,7 +168,7 @@ def main(args):
 
     # STEP 2: Retrieve and/or update localized NCBI Taxonomy database
     ncbi = NCBITaxa()
-    if (time.time() - os.path.getmtime(os.path.join(Path.home(), ".etetoolkit/taxa.sqlite"))) > 86400:
+    if (time.time() - os.path.getmtime(os.path.join(Path.home(), ".etetoolkit/taxa.sqlite"))) > 604800:
         ncbi.update_taxonomy_database()
 
     # STEP 3: Prune species-level tree to family-level
