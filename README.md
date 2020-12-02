@@ -9,4 +9,5 @@ The source phylogram is provided in a format that is not readable by ETE Toolkit
 * Manually remove the leading and closing elements that do not belong to Newick format
 * remove additional node attributes:
   $ sed "s/[[][^]]*[]]//g" largetree.tre > largetree_pruned.tre
-* ... (explain further steps)
+* Replace numerical leaf names with correpsonding species name, as listed in the TRANSLATE section of the original file (best done programmatically)
+
